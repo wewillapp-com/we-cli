@@ -4,6 +4,8 @@
 
 a tool for scaffoling go_standard project in wewillapp
 
+## Install
+easy install with go install `go install github.com/wewillapp-com/we-cli@latest`
 
 ## Usage
 `we-cli [command] [flags]`
