@@ -19,7 +19,7 @@ package main
 import (
 	"embed"
 
-	"github.com/wewillapp-test/we-cli/cmd"
+	"github.com/wewillapp-com/we-cli/cmd"
 )
 
 //go:embed templates
