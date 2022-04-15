@@ -11,12 +11,18 @@ easy install with go install `go install github.com/wewillapp-com/we-cli@latest`
 `we-cli [command] [flags]`
 
 available commands:
-  - `init` initialize new project
+  - `init` initialize new project *(incomming)*
   - `create` create a resource
+    - flags:
+      - `--name, -n` resource name
+      - `--type, -t` resource type *(model, response, form, resource)*
+      - `--path, -p` resource path *(no need if create resource)*
 
-availabel resources:
-  - model
-  - response
-  - form
+avialable resources:
+  - `model` - create a model
+  - `response` - create a response
+  - `form` - create a form
+  - `resource` create all(model, response, form)
+
 
 License:  [Gnu3](./LICENSE)

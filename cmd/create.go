@@ -148,37 +148,38 @@ func getFolderList() []string {
 }
 
 func createResource() {
-	dir := getCurrentDirectory()
+	// dir := getCurrentDirectory()
 	data := struct {
 		Name string
 	}{
 		Name: strcase.ToCamel(options.Name),
 	}
-	m, _ := template.ParseFS(TemplateFS, "templates/resources/model.tmpl")
-	f, _ := template.ParseFS(TemplateFS, "templates/resources/form.tmpl")
-	r, _ := template.ParseFS(TemplateFS, "templates/resources/response.tmpl")
-	createDirectoryIfNotExists(dir + "/model")
-	createDirectoryIfNotExists(dir + "/form")
-	createDirectoryIfNotExists(dir + "/resp")
-	mFileName := dir + "/model/" + strcase.ToSnake(options.Name) + "_model.go"
-	if _, err := os.Stat(mFileName); err == nil {
+	types := []string{"model", "form", "response"}
+	var resources []Resource
+	for _, t := range types {
+		opt := CreateOption{
+			Type: t,
+			Name: options.Name,
+		}
+		r := prepareResource(opt)
+		resources = append(resources, *r)
+	}
+
+	// mFileName := dir + "/model/" + strcase.ToSnake(options.Name) + "_model.go"
+	if _, err := os.Stat(resources[0].FullPath); err == nil {
 		p := &survey.Confirm{
 			Message: "file already exists, do you want to overwrite it?",
 			Default: false,
 		}
 		survey.AskOne(p, &options.Override)
 	}
-	fFileName := dir + "/form/" + strcase.ToSnake(options.Name) + "_form.go"
-	rFileName := dir + "/resp/" + strcase.ToSnake(options.Name) + "_resp.go"
-	if options.Override {
-		mFile, _ := os.Create(mFileName)
-		fFile, _ := os.Create(fFileName)
-		rFile, _ := os.Create(rFileName)
-		m.Execute(mFile, data)
-		f.Execute(fFile, data)
-		r.Execute(rFile, data)
-		fmt.Printf("🎉 resource \u001b[32m%s\u001b[0m created \n", options.Name)
+	for _, r := range resources {
+		createDirectoryIfNotExists(r.Path)
+		f, _ := os.Create(r.FullPath)
+		data.Name = r.Name
+		r.Template.Execute(f, data)
 	}
+	fmt.Printf("🎉 resource \u001b[32m%s\u001b[0m created \n", options.Name)
 
 }
 func createFile() {
@@ -203,14 +204,6 @@ func createFile() {
 		resource.Template.Execute(file, data)
 		fmt.Printf("🎉 file \u001b[32m%s\u001b[0m created in \u001b[32m%s\u001b[0m \n", resource.FileName, resource.FullPath)
 	}
-}
-
-func getCurrentDirectory() string {
-	dir, _ := os.Getwd()
-	if os.Getenv("ENV") == "dev" || os.Getenv("APP_ENV") == "dev" {
-		dir = dir + "/tmp"
-	}
-	return dir
 }
 
 func prepareResource(opt CreateOption) *Resource {
