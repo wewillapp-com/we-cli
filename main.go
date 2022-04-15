@@ -23,10 +23,10 @@ import (
 )
 
 //go:embed templates
-var templates embed.FS
+var t embed.FS
 
 func main() {
 	//assign embed templates to cmd
-	cmd.TemplateFS = templates
+	cmd.TemplateFS = t
 	cmd.Execute()
 }
