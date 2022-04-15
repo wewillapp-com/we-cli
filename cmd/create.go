@@ -33,9 +33,15 @@ import (
 type CreateOption struct {
 	Name     string
 	Path     string
-	FileName string
 	Type     string
 	Override bool
+}
+type Resource struct {
+	Template *template.Template
+	Path     string
+	Name     string
+	FileName string
+	FullPath string
 }
 
 var options CreateOption
@@ -136,6 +142,7 @@ func getFolderList() []string {
 			names = append(names, f.Name())
 		}
 	}
+	//TODO: Create new folder features
 	// names = append(names, "📁 new folder")
 	return names
 }
@@ -175,46 +182,26 @@ func createResource() {
 
 }
 func createFile() {
-	var tem *template.Template
-	var err error
-	dir := getCurrentDirectory()
+	resource := prepareResource(options)
 	data := struct {
 		Name string
 	}{
-		Name: transformResourceName(options.Name, options.Type),
+		Name: resource.Name,
 	}
-	switch options.Type {
-	case "model":
-		tem, err = template.ParseFS(TemplateFS, "templates/resources/model.tmpl")
-	case "form":
-		tem, err = template.ParseFS(TemplateFS, "templates/resources/form.tmpl")
-	case "response":
-		tem, err = template.ParseFS(TemplateFS, "templates/resources/response.tmpl")
-	}
-	if err != nil {
-		fmt.Println("⛔ Oops, sorry for the error but we cannot get template")
-		log.Fatal(err)
-	}
-	fPath := dir + "/" + options.Path
-	createDirectoryIfNotExists(fPath)
-	prefix := options.Type
-	if prefix == "response" {
-		prefix = "resp"
-	}
-	fileName := transformFileName(options.Name, options.Type)
-	fullPath := fPath + "/" + transformFileName(options.Name, options.Type) + ".go"
-	if _, err := os.Stat(fullPath); err == nil {
-		msg := fmt.Sprintf("file \u001b[31m%s.go\u001b[0m already exists, overwrite it?", fileName)
+	createDirectoryIfNotExists(resource.Path)
+	if _, err := os.Stat(resource.FullPath); err == nil {
+		msg := fmt.Sprintf("file \u001b[31m%s.go\u001b[0m already exists, overwrite it?", resource.FileName)
 		p := &survey.Confirm{
 			Message: msg,
 			Default: false,
 		}
 		survey.AskOne(p, &options.Override)
 	}
+
 	if options.Override {
-		file, _ := os.Create(fullPath)
-		tem.Execute(file, data)
-		fmt.Printf("🎉 file \u001b[32m%s\u001b[0m created in \u001b[32m%s/%s.go\u001b[0m \n", fileName, options.Path, strcase.ToSnake(options.Name))
+		file, _ := os.Create(resource.FullPath)
+		resource.Template.Execute(file, data)
+		fmt.Printf("🎉 file \u001b[32m%s\u001b[0m created in \u001b[32m%s\u001b[0m \n", resource.FileName, resource.FullPath)
 	}
 }
 
@@ -226,6 +213,26 @@ func getCurrentDirectory() string {
 	return dir
 }
 
+func prepareResource(opt CreateOption) *Resource {
+	rPath := "templates/resources/" + opt.Type + ".tmpl"
+	tem, _ := template.ParseFS(TemplateFS, rPath)
+	dir, _ := os.Getwd()
+	//? Dev mode
+	if os.Getenv("ENV") == "dev" || os.Getenv("APP_ENV") == "dev" {
+		dir = dir + "/tmp"
+	}
+	name := transformResourceName(opt.Name, opt.Type)
+	file := transformFileName(opt.Name, opt.Type) + ".go"
+	path := fmt.Sprintf("%s/%s", dir, opt.Type)
+	r := &Resource{
+		Name:     name,
+		Path:     path,
+		Template: tem,
+		FileName: file,
+		FullPath: path + "/" + file,
+	}
+	return r
+}
 func createDirectoryIfNotExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir(path, os.ModePerm)
@@ -249,5 +256,6 @@ func findAndReplaceName(name string, rType string) string {
 	c := cases.Title(language.English)
 	rType = c.String(rType)
 	name = strings.TrimSuffix(name, rType)
+	name = strings.TrimSuffix(name, strings.ToLower(rType))
 	return name + rType
 }
