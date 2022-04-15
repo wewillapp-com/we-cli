@@ -1,2 +1,2 @@
 clean:
-	rm -rf tmp/*
+	rm -rf tmp/* form resp model
