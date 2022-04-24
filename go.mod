@@ -1,4 +1,4 @@
-module github.com/wewillapp-com/we-cli
+module go.wewillapp.com/we-cli
 
 go 1.18
 
