@@ -28,4 +28,4 @@ avialable resources:
 - `form` - create a form
 - `resource` create all(model, response, form)
 
-License: [Gnu3](./LICENSE)
+[License](./LICENSE)
